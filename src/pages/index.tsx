@@ -11,16 +11,19 @@ import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
 import TextField from "@material-ui/core/TextField";
 
-import QRCode from "react-qr-code";
+import {default as QRCode, QRCodeProps} from "react-qr-code";
+
+import {QRCodeErrorCorrectionLevel, toDataURL} from "qrcode";
+
+type QRCodeLevel = QRCodeProps["level"];
 
 interface State {
   text: string;
-  level: QRCodeLvel;
+  level: QRCodeLevel;
   size: number;
 }
 
-const levels = ['L', 'M', 'Q', 'H'] as QRCodeLvel[];
-type QRCodeLvel = 'L' | 'M' | 'Q' | 'H';
+const levels = ['L', 'M', 'Q', 'H'] as QRCodeLevel[];
 
 export default class Home extends React.Component<{}, State> {
   static QR_MIN_HEIGHT = 128;
@@ -38,7 +41,7 @@ export default class Home extends React.Component<{}, State> {
     this.setState({ text });
   }
 
-  storeLevel = (level: QRCodeLvel, event: React.MouseEvent<HTMLButtonElement>) => {
+  storeLevel = (level: QRCodeLevel, event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     this.setState({ level });
   }
@@ -118,10 +121,63 @@ export default class Home extends React.Component<{}, State> {
 
         <br />
         <div style={{width: '100%', textAlign: 'center'}} ref={this.codeRef}>
-          {text != "" && <QRCode value={text} level={level} size={size} />}
+          {text != "" && <QRRender text={text} level={level} size={size} />}
         </div>
         <br />
       </Container>
     );
+  }
+}
+
+class QRRender extends React.Component<State, { key: string; data?: string }> {
+  state: { key: string; data?: string } = { key: "" };
+
+  private mounted = true;
+  componentWillUnmount() {
+    this.mounted = false;
+  }
+
+  static getKey({level, text, size}: State): string {
+    return level + ";" + size.toString() + ";" + text;
+  }
+
+  static getDerivedStateFromProps(props: State) {
+    return { key: QRRender.getKey(props) };
+  }
+
+  private async updateCodeState() {
+    const { text, level, size } = this.props;
+  
+    const data = await toDataURL(text, {errorCorrectionLevel: level, type: 'image/png', width: size });
+
+    if (!this.mounted) return;
+    this.setState({ data });
+  }
+
+  componentDidMount() {
+    this.updateCodeState();
+  }
+
+  componentDidUpdate(prevProps: State) {
+    const key = QRRender.getKey(this.props);
+    const prevKey = QRRender.getKey(prevProps);
+    
+    if (key === prevKey) return;
+    this.updateCodeState();
+  }
+
+  render() {
+    const { text, level, size } = this.props;
+    let { key, data } = this.state;
+    if (QRRender.getKey(this.props) != key) {
+      data = undefined;
+    }
+
+    const code = <QRCode value={text} level={level} size={size} />;
+    if (data !== undefined) {
+      return <a href={data} target="_blank">{code}</a>;
+    } else {
+      return code;
+    }
   }
 }
