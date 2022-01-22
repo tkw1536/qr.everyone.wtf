@@ -11,9 +11,7 @@ export default class MyDocument extends Document {
   render() {
     return (
       <Html lang="en" itemScope itemType="http://schema.org/WebPage" prefix="og: http://ogp.me/ns#">
-        <Head>
-          <script async src="https://inform.everyone.wtf/legal.min.js?float" data-site-id="4d9a68bc-45c6-410a-8d4c-464d3ca82e73"></script>
-        </Head>
+        <Head />
         <body>
           <Main />
           <NextScript />

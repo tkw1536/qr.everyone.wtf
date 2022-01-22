@@ -1,0 +1,19 @@
+footer {
+    text-align: right;
+
+    font-size: small;
+    width: 96vw;
+    margin-left: 2vw;
+    margin-right: 2vw;
+    border-top: 1px solid black;
+}
+
+@media (prefers-color-scheme: dark) {
+    footer {
+        border-top: 1px solid white;
+    }
+}
+
+footer a {
+    color: blue !important;
+}

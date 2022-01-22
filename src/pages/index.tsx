@@ -30,7 +30,7 @@ const levels = ['L', 'M', 'Q', 'H'] as QRCodeLevel[];
 export default class Home extends React.Component<{}, State> {
   static QR_MIN_HEIGHT = 128;
   static QR_MARGIN_HOR = 20;
-  static QR_MARGIN_VER = 60;
+  static QR_MARGIN_VER = 80;
 
   state: State = {
     text: "",
@@ -111,7 +111,10 @@ export default class Home extends React.Component<{}, State> {
           <Page title="QR Code Generator" url="https://qr.everyone.wtf/" description="Generate QR Codes for Everyone" />
 
           <Card>
-            <CardHeader title="QR Code Generator" subheader="Generate and display a QR Code. All data is generated locally and never leaves your device. " />
+            <CardHeader title="QR Code Generator" subheader={<>
+              Generate and display a QR Code. All data is generated locally and never leaves your device. <br />
+              Click on the generated image to open it in a new window.
+            </>} />
             <CardContent>
 
             <Grid container direction="row" spacing={1}>
