@@ -14,13 +14,14 @@ import TextField from "@mui/material/TextField";
 
 import {default as QRCode, QRCodeProps} from "react-qr-code";
 
-import {QRCodeErrorCorrectionLevel, toDataURL} from "qrcode";
+import { toDataURL } from "qrcode";
+import { FormControlLabel, FormGroup } from "@mui/material";
 
 type QRCodeLevel = QRCodeProps["level"];
 
 interface State extends Pick<QRProps, "text" | "level">{
-  useAutoSize: boolean;
   autoSize: number;
+  useManualSize: boolean;
   manualSize: number;
 }
 
@@ -35,8 +36,8 @@ export default class Home extends React.Component<{}, State> {
     text: "",
     level: levels[0],
 
-    useAutoSize: true,
     autoSize: 128,
+    useManualSize: false,
     manualSize: 1000,
   }
 
@@ -50,8 +51,8 @@ export default class Home extends React.Component<{}, State> {
     this.setState({ level });
   }
 
-  toggleAuto = (event: React.ChangeEvent<HTMLInputElement>) => {
-    this.setState({ useAutoSize: event.target.checked})
+  toggleManual = (event: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({ useManualSize: event.target.checked})
   }
 
   storeManualSize = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,7 +103,8 @@ export default class Home extends React.Component<{}, State> {
   private codeRef = React.createRef<HTMLDivElement>();
 
   render() {
-    const { text, level, autoSize, manualSize, useAutoSize } = this.state;
+    const { text, level, autoSize, manualSize, useManualSize } = this.state;
+    const displaySize = useManualSize ? manualSize : autoSize;
     return (
       <Container maxWidth="md">
         <form noValidate onSubmit={this.preventDefault} autoComplete="off" ref={this.formRef}>
@@ -128,15 +130,14 @@ export default class Home extends React.Component<{}, State> {
                   </ButtonGroup>
                 </Grid>
                 <Grid item sm={6}>
-                  <br />
                   <FormLabel component="legend">Image Size</FormLabel>
-                  <span>
-                    Manual <TextField type="number" value={manualSize} onChange={this.storeManualSize} disabled={useAutoSize} /> px
-                  </span>
-                  <Switch checked={useAutoSize} onChange={this.toggleAuto} />
-                  <span>
-                    Auto <span style={{color: "gray"}}>{Math.round(autoSize)} px</span>
-                  </span>
+                  <FormGroup row={true}>
+                    <FormControlLabel
+                      control={<Switch checked={useManualSize} onChange={this.toggleManual} />}
+                      label={`Manual`}
+                    />
+                    <TextField type="number" value={Math.round(displaySize)} onChange={this.storeManualSize} disabled={!useManualSize} />
+                  </FormGroup>
                 </Grid>
               </Grid>
             </Grid>
@@ -147,7 +148,7 @@ export default class Home extends React.Component<{}, State> {
 
         <br />
         <div style={{width: '100%', textAlign: 'center'}} ref={this.codeRef}>
-          {text != "" && <QRRender text={text} level={level} size={useAutoSize ? autoSize : manualSize} />}
+          {text != "" && <QRRender text={text} level={level} size={displaySize} />}
         </div>
         <br />
       </Container>
