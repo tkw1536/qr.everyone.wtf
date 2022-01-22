@@ -1,16 +1,16 @@
 import * as React from "react"
 import Page from "../components/page";
 
-import Button from "@material-ui/core/Button";
-import Switch from "@material-ui/core/Switch";
-import ButtonGroup from "@material-ui/core/ButtonGroup";
-import Container from "@material-ui/core/Container";
-import FormLabel from "@material-ui/core/FormLabel";
-import Grid from "@material-ui/core/Grid";
-import Card from '@material-ui/core/Card';
-import CardHeader from '@material-ui/core/CardHeader';
-import CardContent from '@material-ui/core/CardContent';
-import TextField from "@material-ui/core/TextField";
+import Button from "@mui/material/Button";
+import Switch from "@mui/material/Switch";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import Container from "@mui/material/Container";
+import FormLabel from "@mui/material/FormLabel";
+import Grid from "@mui/material/Grid";
+import Card from '@mui/material/Card';
+import CardHeader from '@mui/material/CardHeader';
+import CardContent from '@mui/material/CardContent';
+import TextField from "@mui/material/TextField";
 
 import {default as QRCode, QRCodeProps} from "react-qr-code";
 
