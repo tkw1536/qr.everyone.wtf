@@ -2,6 +2,7 @@ import * as React from "react"
 import Page from "../components/page";
 
 import Button from "@material-ui/core/Button";
+import Switch from "@material-ui/core/Switch";
 import ButtonGroup from "@material-ui/core/ButtonGroup";
 import Container from "@material-ui/core/Container";
 import FormLabel from "@material-ui/core/FormLabel";
@@ -17,10 +18,10 @@ import {QRCodeErrorCorrectionLevel, toDataURL} from "qrcode";
 
 type QRCodeLevel = QRCodeProps["level"];
 
-interface State {
-  text: string;
-  level: QRCodeLevel;
-  size: number;
+interface State extends Pick<QRProps, "text" | "level">{
+  useAutoSize: boolean;
+  autoSize: number;
+  manualSize: number;
 }
 
 const levels = ['L', 'M', 'Q', 'H'] as QRCodeLevel[];
@@ -33,7 +34,10 @@ export default class Home extends React.Component<{}, State> {
   state: State = {
     text: "",
     level: levels[0],
-    size: 128,
+
+    useAutoSize: true,
+    autoSize: 128,
+    manualSize: 1000,
   }
 
   storeText = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,6 +50,14 @@ export default class Home extends React.Component<{}, State> {
     this.setState({ level });
   }
 
+  toggleAuto = (event: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({ useAutoSize: event.target.checked})
+  }
+
+  storeManualSize = (event: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({ manualSize: parseInt(event.target.value, 10) })
+  }
+
   preventDefault = (event: React.FormEvent) => {
     event.preventDefault();
   }
@@ -53,6 +65,9 @@ export default class Home extends React.Component<{}, State> {
   componentDidMount = () => {
     this.updateSize();
     window.addEventListener('resize', this.updateSize);
+    if (location.hash) { // if we have a hash, setup the state to contain the hash
+      this.setState({ text: decodeURIComponent(location.hash.substring(1)) });
+    }
   }
 
   componentWillUnmount = () => {
@@ -80,14 +95,14 @@ export default class Home extends React.Component<{}, State> {
     
     // the size 
     const size = Math.min(width, Math.max(height, Home.QR_MIN_HEIGHT));
-    this.setState({ size });
+    this.setState({ autoSize: size });
   }
 
   private formRef = React.createRef<HTMLFormElement>();
   private codeRef = React.createRef<HTMLDivElement>();
 
   render() {
-    const { text, level, size } = this.state;
+    const { text, level, autoSize, manualSize, useAutoSize } = this.state;
     return (
       <Container maxWidth="md">
         <form noValidate onSubmit={this.preventDefault} autoComplete="off" ref={this.formRef}>
@@ -106,11 +121,22 @@ export default class Home extends React.Component<{}, State> {
               <Grid container spacing={1}>
                 <Grid item sm={6}>
                   <br />
-                  <FormLabel component="legend">Level</FormLabel>
+                  <FormLabel component="legend">QR Code Level</FormLabel>
                   <ButtonGroup variant="contained" color="primary" aria-label="contained primary button group">
                     {levels.map(l =>
                       <Button onClick={this.storeLevel.bind(this, l)} key={`variant-${l}`} color={l === level ? "secondary" : "primary"}>{l}</Button>)}
                   </ButtonGroup>
+                </Grid>
+                <Grid item sm={6}>
+                  <br />
+                  <FormLabel component="legend">Image Size</FormLabel>
+                  <span>
+                    Manual <TextField type="number" value={manualSize} onChange={this.storeManualSize} disabled={useAutoSize} /> px
+                  </span>
+                  <Switch checked={useAutoSize} onChange={this.toggleAuto} />
+                  <span>
+                    Auto <span style={{color: "gray"}}>{Math.round(autoSize)} px</span>
+                  </span>
                 </Grid>
               </Grid>
             </Grid>
@@ -121,7 +147,7 @@ export default class Home extends React.Component<{}, State> {
 
         <br />
         <div style={{width: '100%', textAlign: 'center'}} ref={this.codeRef}>
-          {text != "" && <QRRender text={text} level={level} size={size} />}
+          {text != "" && <QRRender text={text} level={level} size={useAutoSize ? autoSize : manualSize} />}
         </div>
         <br />
       </Container>
@@ -129,7 +155,13 @@ export default class Home extends React.Component<{}, State> {
   }
 }
 
-class QRRender extends React.Component<State, { key: string; data?: string }> {
+interface QRProps {
+  text: string;
+  level: QRCodeLevel;
+  size: number;
+}
+
+class QRRender extends React.Component<QRProps, { key: string; data?: string }> {
   state: { key: string; data?: string } = { key: "" };
 
   private mounted = true;
@@ -137,11 +169,11 @@ class QRRender extends React.Component<State, { key: string; data?: string }> {
     this.mounted = false;
   }
 
-  static getKey({level, text, size}: State): string {
+  static getKey({level, text, size}: QRProps): string {
     return level + ";" + size.toString() + ";" + text;
   }
 
-  static getDerivedStateFromProps(props: State) {
+  static getDerivedStateFromProps(props: QRProps) {
     return { key: QRRender.getKey(props) };
   }
 
@@ -158,7 +190,7 @@ class QRRender extends React.Component<State, { key: string; data?: string }> {
     this.updateCodeState();
   }
 
-  componentDidUpdate(prevProps: State) {
+  componentDidUpdate(prevProps: QRProps) {
     const key = QRRender.getKey(this.props);
     const prevKey = QRRender.getKey(prevProps);
     
