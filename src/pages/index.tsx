@@ -104,6 +104,7 @@ export default class Home extends React.Component<{}, State> {
 
   render() {
     const { text, level, autoSize, manualSize, useManualSize } = this.state;
+    const theText = text || "";
     const displaySize = useManualSize ? manualSize : autoSize;
     return (
       <Container maxWidth="md">
@@ -119,8 +120,13 @@ export default class Home extends React.Component<{}, State> {
 
             <Grid container direction="row" spacing={1}>
               <Grid container spacing={1}>
-                <Grid item sm={12}>
-                  <TextField fullWidth type="text" value={text || ""} onChange={this.storeText} />
+                <Grid item sm={10}>
+                  <TextField fullWidth type="text" value={theText} onChange={this.storeText} />
+                </Grid>
+                <Grid item sm={2} alignItems="stretch" style={{display: "flex"}}>
+                  <Button fullWidth disabled={theText == ""} href={"#" + encodeURIComponent(theText)} target="_blank">
+                    Permalink
+                  </Button>
                 </Grid>
               </Grid>
               <Grid container spacing={1}>
