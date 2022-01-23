@@ -158,7 +158,7 @@ export default class Home extends React.Component<{}, State> {
         </form>
 
         <br />
-        <div class={styles.qr} ref={this.codeRef}>
+        <div className={styles.qr} ref={this.codeRef}>
           {text != "" && <QRRender text={text} level={level} size={displaySize} />}
         </div>
         <br />
