@@ -1,6 +1,8 @@
 import * as React from "react"
 import Page from "../components/page";
 
+import styles from "./index.module.css";
+
 import Button from "@mui/material/Button";
 import Switch from "@mui/material/Switch";
 import ButtonGroup from "@mui/material/ButtonGroup";
@@ -30,7 +32,7 @@ const levels = ['L', 'M', 'Q', 'H'] as QRCodeLevel[];
 export default class Home extends React.Component<{}, State> {
   static QR_MIN_HEIGHT = 128;
   static QR_MARGIN_HOR = 20;
-  static QR_MARGIN_VER = 80;
+  static QR_MARGIN_VER = 5;
 
   state: State = {
     text: "",
@@ -156,7 +158,7 @@ export default class Home extends React.Component<{}, State> {
         </form>
 
         <br />
-        <div style={{width: '100%', textAlign: 'center'}} ref={this.codeRef}>
+        <div class={styles.qr} ref={this.codeRef}>
           {text != "" && <QRRender text={text} level={level} size={displaySize} />}
         </div>
         <br />
