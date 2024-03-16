@@ -1,0 +1,13 @@
+{
+  "extends": ["next/core-web-vitals", "airbnb-base"],
+  "rules": {
+    "max-classes-per-file": "off",
+    "import/no-named-default": "off",
+    "import/extensions": ["error", "never"],
+    "no-restricted-globals": "off",
+    "no-use-before-define": "off",
+    "class-methods-use-this": "off",
+    "max-len": "off",
+    "no-unused-vars": "off"
+  }
+}

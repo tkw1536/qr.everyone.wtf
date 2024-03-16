@@ -2,9 +2,11 @@ import * as React from 'react';
 import Head from 'next/head';
 
 export default class Page extends React.Component<{title: string, url: string, description: string, image?: string}> {
-    render() {
-        const { title, url, description, image, children } = this.props;
-        return <>
+  render() {
+    const {
+      title, url, description, image, children,
+    } = this.props;
+    return <>
             <Head>
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
@@ -12,7 +14,7 @@ export default class Page extends React.Component<{title: string, url: string, d
                 <meta property="twitter:url" content={url} />
 
                 <title>{title}</title>
-                
+
                 <meta itemProp="name" content={title} />
                 <meta name="og:title" content={title} />
                 <meta property="twitter:title" content={title} />
@@ -23,7 +25,7 @@ export default class Page extends React.Component<{title: string, url: string, d
                 <meta name="og:site_name" content={description} />
                 <meta property="twitter:description" content={description} />
 
-                {(typeof image === "string") && <>
+                {(typeof image === 'string') && <>
                     <meta name="image" content={image} />
                     <meta itemProp="image" content={image} />
                     <meta name="og:image" content={image} />
@@ -36,5 +38,5 @@ export default class Page extends React.Component<{title: string, url: string, d
             </Head>
             { children }
         </>;
-    }
+  }
 }

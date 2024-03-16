@@ -1,11 +1,13 @@
 import * as React from 'react';
-import Document, { Html, Head, Main, NextScript } from 'next/document'
+import Document, {
+  Html, Head, Main, NextScript,
+} from 'next/document';
 import ServerStyleSheets from '@mui/styles/ServerStyleSheets';
 
 export default class MyDocument extends Document {
   static async getInitialProps(ctx) {
-    const initialProps = await Document.getInitialProps(ctx)
-    return { ...initialProps }
+    const initialProps = await Document.getInitialProps(ctx);
+    return { ...initialProps };
   }
 
   render() {
@@ -17,19 +19,18 @@ export default class MyDocument extends Document {
           <NextScript />
         </body>
       </Html>
-    )
+    );
   }
-};
+}
 
 MyDocument.getInitialProps = async (ctx) => {
   // Render app and page and get the context of the page with collected side effects.
   const sheets = new ServerStyleSheets();
   const originalRenderPage = ctx.renderPage;
 
-  ctx.renderPage = () =>
-    originalRenderPage({
-      enhanceApp: (App) => (props) => sheets.collect(<App {...props} />),
-    });
+  ctx.renderPage = () => originalRenderPage({
+    enhanceApp: (App) => (props) => sheets.collect(<App {...props} />),
+  });
 
   const initialProps = await Document.getInitialProps(ctx);
 
