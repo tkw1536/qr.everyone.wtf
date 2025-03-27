@@ -4,31 +4,31 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && next export",
+    "build": "next build",
     "lint": "next lint",
     "start": "next start",
     "deploy": "yarn build && gh-pages --dist out --no-history --dotfiles"
   },
   "dependencies": {
-    "@emotion/react": "^11.11.4",
-    "@emotion/styled": "^11.11.0",
-    "@fontsource/roboto": "^5.0.12",
-    "@mui/material": "^5.15.13",
-    "@mui/styles": "^5.15.13",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@fontsource/roboto": "^5.2.5",
+    "@mui/material": "^5.17.1",
+    "@mui/styles": "^5.17.1",
     "@types/qrcode": "^1.5.5",
-    "next": "14.1.3",
-    "qrcode": "^1.5.3",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "react-qr-code": "^2.0.12"
+    "next": "15.2.4",
+    "qrcode": "^1.5.4",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-qr-code": "^2.0.15"
   },
   "devDependencies": {
-    "@types/node": "^20.11.28",
-    "@types/react": "^18.2.66",
-    "eslint": "8.57.0",
+    "@types/node": "^22.13.14",
+    "@types/react": "^19.0.12",
+    "eslint": "9.23.0",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-next": "14.1.3",
-    "gh-pages": "^6.1.1",
-    "typescript": "^5.4.2"
+    "eslint-config-next": "15.2.4",
+    "gh-pages": "^6.3.0",
+    "typescript": "^5.8.2"
   }
 }

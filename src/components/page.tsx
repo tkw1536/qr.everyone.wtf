@@ -1,7 +1,7 @@
 import * as React from 'react';
 import Head from 'next/head';
 
-export default class Page extends React.Component<{title: string, url: string, description: string, image?: string}> {
+export default class Page extends React.Component<{title: string, url: string, description: string, image?: string, children?: React.ReactNode}> {
   render() {
     const {
       title, url, description, image, children,
