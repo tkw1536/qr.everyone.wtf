@@ -217,6 +217,7 @@ class QRRender extends React.Component<QRProps, { key: string; data?: string }> 
   }
 
   override componentDidMount() {
+    this.mounted = true
     void this.updateCodeState()
   }
 
