@@ -82,9 +82,6 @@ export default class Home extends React.Component<object, State> {
   override componentDidMount = () => {
     this.updateSize()
     window.addEventListener('resize', this.updateSize)
-    if (location.hash) { // if we have a hash, setup the state to contain the hash
-      this.setState({ text: decodeURIComponent(location.hash.substring(1)) })
-    }
   }
 
   override componentWillUnmount = () => {
@@ -123,7 +120,6 @@ export default class Home extends React.Component<object, State> {
     const {
       text, level, autoSize, manualSize, useManualSize, fgColor, bgColor,
     } = this.state
-    const theText = text || ''
     const displaySize = useManualSize ? manualSize : autoSize
     return (
       <Container maxWidth="md">
@@ -136,15 +132,8 @@ export default class Home extends React.Component<object, State> {
             <CardContent>
 
             <Grid container direction="row" spacing={1}>
-              <Grid container spacing={1}>
-                <Grid item sm={10}>
-                  <TextField fullWidth type="text" value={theText} onChange={this.storeText} />
-                </Grid>
-                <Grid item sm={2} alignItems="stretch" style={{ display: 'flex' }}>
-                  <Button fullWidth disabled={theText === ''} href={`#${encodeURIComponent(theText)}`} target="_blank">
-                    Permalink
-                  </Button>
-                </Grid>
+              <Grid item xs={12}>
+                <TextField fullWidth type="text" value={text} onChange={this.storeText} />
               </Grid>
               <Grid container spacing={1} className={styles.controls}>
                 <Grid item sm={6} className={styles.control}>
