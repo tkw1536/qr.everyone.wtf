@@ -16,23 +16,26 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 
 import { default as QRCode, type QRCodeProps } from 'react-qr-code'
 
-import { toDataURL } from 'qrcode'
-import type { QRCodeRenderersOptions } from 'qrcode'
+import { toDataURL, toString } from 'qrcode'
+import type { QRCodeRenderersOptions, QRCodeToStringOptions } from 'qrcode'
 import styles from './index.module.css'
 
 type QRCodeLevel = QRCodeProps['level']
+type DownloadFormat = 'png' | 'jpeg' | 'webp' | 'svg'
 
-interface State extends Pick<QRProps, 'text' | 'level' | 'fgColor' | 'bgColor'> {
+interface State extends Pick<QRProps, 'text' | 'level' | 'fgColor' | 'bgColor' | 'format'> {
   autoSize: number
   useManualSize: boolean
   manualSize: number
 }
 
 const levels = ['L', 'M', 'Q', 'H'] as const satisfies readonly QRCodeLevel[]
+const formats = ['png', 'jpeg', 'webp', 'svg'] as const satisfies readonly DownloadFormat[]
 
 const DEFAULT_FG_COLOR = '#000000'
 const DEFAULT_BG_COLOR = '#ffffff'
 const DEFAULT_LEVEL = levels[0]
+const DEFAULT_FORMAT: DownloadFormat = 'png'
 const DEFAULT_MANUAL_SIZE = 1000
 
 const fieldLabelSx = {
@@ -65,6 +68,7 @@ export default class Home extends React.Component<object, State> {
   override state: State = {
     text: '',
     level: DEFAULT_LEVEL,
+    format: DEFAULT_FORMAT,
     fgColor: DEFAULT_FG_COLOR,
     bgColor: DEFAULT_BG_COLOR,
 
@@ -81,6 +85,11 @@ export default class Home extends React.Component<object, State> {
   storeLevel = (_event: React.MouseEvent<HTMLElement>, level: QRCodeLevel | null) => {
     if (level === null) return
     this.setState({ level })
+  }
+
+  storeFormat = (_event: React.MouseEvent<HTMLElement>, format: DownloadFormat | null) => {
+    if (format === null) return
+    this.setState({ format })
   }
 
   storeFgColor = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,6 +112,7 @@ export default class Home extends React.Component<object, State> {
     event.preventDefault()
     this.setState({
       level: DEFAULT_LEVEL,
+      format: DEFAULT_FORMAT,
       fgColor: DEFAULT_FG_COLOR,
       bgColor: DEFAULT_BG_COLOR,
       useManualSize: false,
@@ -160,7 +170,7 @@ export default class Home extends React.Component<object, State> {
 
   override render() {
     const {
-      text, level, autoSize, manualSize, useManualSize, fgColor, bgColor,
+      text, level, format, autoSize, manualSize, useManualSize, fgColor, bgColor,
     } = this.state
     const displaySize = useManualSize ? manualSize : autoSize
     return (
@@ -168,8 +178,9 @@ export default class Home extends React.Component<object, State> {
         <form noValidate onSubmit={this.preventDefault} autoComplete="off" ref={this.formRef}>
           <Card>
             <CardHeader title="QR Code Generator" subheader={<>
-              Generate and display a QR Code. All data is generated locally and never leaves your device. <br />
-              Click on the generated image to download as PNG. 
+              Generate and display a QR Code.
+              All data is generated locally and never leaves your device.
+              Click on the generated image to download it.
             </>} />
             <CardContent>
               <Stack spacing={2}>
@@ -194,7 +205,7 @@ export default class Home extends React.Component<object, State> {
                     minWidth: 0,
                   }}
                 >
-                  <FormControl fullWidth sx={{ minWidth: 0 }}>
+                  <FormControl fullWidth sx={{ minWidth: 0, gridColumn: '1 / -1' }}>
                     <FormLabel sx={fieldLabelSx}>QR Code Level</FormLabel>
                     <ToggleButtonGroup
                       exclusive
@@ -211,26 +222,6 @@ export default class Home extends React.Component<object, State> {
                         </ToggleButton>
                       ))}
                     </ToggleButtonGroup>
-                  </FormControl>
-
-                  <FormControl fullWidth sx={{ minWidth: 0 }}>
-                    <FormLabel sx={fieldLabelSx}>Image Size</FormLabel>
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
-                      <Switch
-                        checked={useManualSize}
-                        onChange={this.toggleManual}
-                        inputProps={{ 'aria-label': 'Enable manual image size' }}
-                      />
-                      <TextField
-                        type="number"
-                        size="small"
-                        fullWidth
-                        value={Math.round(displaySize)}
-                        onChange={this.storeManualSize}
-                        disabled={!useManualSize}
-                        inputProps={{ min: 1, 'aria-label': 'Image size in pixels' }}
-                      />
-                    </Stack>
                   </FormControl>
 
                   <FormControl fullWidth sx={{ minWidth: 0 }}>
@@ -256,6 +247,45 @@ export default class Home extends React.Component<object, State> {
                       InputProps={colorFieldInputProps}
                     />
                   </FormControl>
+
+                  <FormControl fullWidth sx={{ minWidth: 0 }}>
+                    <FormLabel sx={fieldLabelSx}>Image Size</FormLabel>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+                      <Switch
+                        checked={useManualSize}
+                        onChange={this.toggleManual}
+                        inputProps={{ 'aria-label': 'Enable manual image size' }}
+                      />
+                      <TextField
+                        type="number"
+                        size="small"
+                        fullWidth
+                        value={Math.round(displaySize)}
+                        onChange={this.storeManualSize}
+                        disabled={!useManualSize}
+                        inputProps={{ min: 1, 'aria-label': 'Image size in pixels' }}
+                      />
+                    </Stack>
+                  </FormControl>
+
+                  <FormControl fullWidth sx={{ minWidth: 0 }}>
+                    <FormLabel sx={fieldLabelSx}>Download Format</FormLabel>
+                    <ToggleButtonGroup
+                      exclusive
+                      fullWidth
+                      size="small"
+                      color="primary"
+                      value={format}
+                      onChange={this.storeFormat}
+                      aria-label="Download format"
+                    >
+                      {formats.map((f) => (
+                        <ToggleButton key={`format-${f}`} value={f}>
+                          {f.toUpperCase()}
+                        </ToggleButton>
+                      ))}
+                    </ToggleButtonGroup>
+                  </FormControl>
                 </Box>
               </Stack>
             </CardContent>
@@ -264,7 +294,16 @@ export default class Home extends React.Component<object, State> {
 
         <br />
         <div className={styles.qr} ref={this.codeRef}>
-          {text !== '' && <QRRender text={text} level={level} size={displaySize} fgColor={fgColor} bgColor={bgColor} />}
+          {text !== '' && (
+            <QRRender
+              text={text}
+              level={level}
+              size={displaySize}
+              fgColor={fgColor}
+              bgColor={bgColor}
+              format={format}
+            />
+          )}
         </div>
       </Container>
     )
@@ -277,11 +316,12 @@ interface QRProps {
   size: number
   fgColor: string
   bgColor: string
+  format: DownloadFormat
 }
 
 interface QRState {
   key: string
-  dataURLs?: { png: string }
+  dataURLs?: Record<DownloadFormat, string>
 }
 
 class QRRender extends React.Component<QRProps, QRState> {
@@ -311,8 +351,32 @@ class QRRender extends React.Component<QRProps, QRState> {
       color: { dark: fgColor, light: bgColor },
     } as QRCodeRenderersOptions)
 
+    const jpeg = await toDataURL(text, {
+      errorCorrectionLevel: level,
+      type: 'image/jpeg',
+      width: size,
+      quality: 1,
+      color: { dark: fgColor, light: bgColor },
+    } as QRCodeRenderersOptions)
+
+    const webp = await toDataURL(text, {
+      errorCorrectionLevel: level,
+      type: 'image/webp',
+      width: size,
+      quality: 1,
+      color: { dark: fgColor, light: bgColor },
+    } as QRCodeRenderersOptions)
+
+    const svgSource = await qrToString(text, {
+      errorCorrectionLevel: level,
+      type: 'svg',
+      width: size,
+      color: { dark: fgColor, light: bgColor },
+    })
+    const svg = `data:image/svg+xml;base64,${btoa(svgSource)}`
+
     if (!this.mounted) return
-    this.setState({ dataURLs: { png: png } })
+    this.setState({ dataURLs: { png, jpeg, webp, svg } })
   }
 
   override componentDidMount() {
@@ -329,7 +393,7 @@ class QRRender extends React.Component<QRProps, QRState> {
   }
 
   override render() {
-    const { text, level, size, fgColor, bgColor } = this.props
+    const { text, level, size, fgColor, bgColor, format } = this.props
     const { key } = this.state
     let { dataURLs } = this.state
     if (QRRender.getKey(this.props) !== key) {
@@ -337,10 +401,26 @@ class QRRender extends React.Component<QRProps, QRState> {
     }
 
     const code = <QRCode value={text} level={level} size={size} fgColor={fgColor} bgColor={bgColor} />
-    if (typeof dataURLs !== "undefined") {
-      return <a href={dataURLs.png} target="_blank" rel="noreferrer" download="qr.png">{code}</a>
+    if (dataURLs !== undefined) {
+      return (
+        <a href={dataURLs[format]} target="_blank" rel="noreferrer" download={`qr.${format}`}>
+          {code}
+        </a>
+      )
     }
     return code
   }
+}
+
+function qrToString(text: string, options: QRCodeToStringOptions): Promise<string> {
+  return new Promise((resolve, reject) => {
+    toString(text, options, (error, string) => {
+      if (error) {
+        reject(error)
+      } else {
+        resolve(string)
+      }
+    })
+  })
 }
 // spellchecker:words qrcode
