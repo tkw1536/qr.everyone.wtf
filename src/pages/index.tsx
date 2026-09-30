@@ -169,7 +169,7 @@ export default class Home extends React.Component<object, State> {
           <Card>
             <CardHeader title="QR Code Generator" subheader={<>
               Generate and display a QR Code. All data is generated locally and never leaves your device. <br />
-              Click on the generated image to open it in a new window.
+              Click on the generated image to download as PNG. 
             </>} />
             <CardContent>
               <Stack spacing={2}>
@@ -279,8 +279,13 @@ interface QRProps {
   bgColor: string
 }
 
-class QRRender extends React.Component<QRProps, { key: string; data?: string }> {
-  override state: { key: string; data?: string } = { key: '' }
+interface QRState {
+  key: string
+  dataURLs?: { png: string }
+}
+
+class QRRender extends React.Component<QRProps, QRState> {
+  override state: QRState = { key: '' }
 
   private mounted = true
 
@@ -299,7 +304,7 @@ class QRRender extends React.Component<QRProps, { key: string; data?: string }> 
   private async updateCodeState() {
     const { text, level, size, fgColor, bgColor } = this.props
 
-    const data = await toDataURL(text, {
+    const png = await toDataURL(text, {
       errorCorrectionLevel: level,
       type: 'image/png',
       width: size,
@@ -307,7 +312,7 @@ class QRRender extends React.Component<QRProps, { key: string; data?: string }> 
     } as QRCodeRenderersOptions)
 
     if (!this.mounted) return
-    this.setState({ data })
+    this.setState({ dataURLs: { png: png } })
   }
 
   override componentDidMount() {
@@ -326,14 +331,14 @@ class QRRender extends React.Component<QRProps, { key: string; data?: string }> 
   override render() {
     const { text, level, size, fgColor, bgColor } = this.props
     const { key } = this.state
-    let { data } = this.state
+    let { dataURLs } = this.state
     if (QRRender.getKey(this.props) !== key) {
-      data = undefined
+      dataURLs = undefined
     }
 
     const code = <QRCode value={text} level={level} size={size} fgColor={fgColor} bgColor={bgColor} />
-    if (data !== undefined) {
-      return <a href={data} target="_blank" rel="noreferrer">{code}</a>
+    if (typeof dataURLs !== "undefined") {
+      return <a href={dataURLs.png} target="_blank" rel="noreferrer" download="qr.png">{code}</a>
     }
     return code
   }
