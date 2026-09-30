@@ -20,13 +20,16 @@ import styles from './index.module.css'
 
 type QRCodeLevel = QRCodeProps['level']
 
-interface State extends Pick<QRProps, 'text' | 'level'> {
+interface State extends Pick<QRProps, 'text' | 'level' | 'fgColor' | 'bgColor'> {
   autoSize: number
   useManualSize: boolean
   manualSize: number
 }
 
 const levels = ['L', 'M', 'Q', 'H'] as const satisfies readonly QRCodeLevel[]
+
+const DEFAULT_FG_COLOR = '#000000'
+const DEFAULT_BG_COLOR = '#ffffff'
 
 export default class Home extends React.Component<object, State> {
   static QR_MIN_HEIGHT = 128
@@ -38,6 +41,8 @@ export default class Home extends React.Component<object, State> {
   override state: State = {
     text: '',
     level: levels[0],
+    fgColor: DEFAULT_FG_COLOR,
+    bgColor: DEFAULT_BG_COLOR,
 
     autoSize: 128,
     useManualSize: false,
@@ -52,6 +57,14 @@ export default class Home extends React.Component<object, State> {
   storeLevel = (level: QRCodeLevel, event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
     this.setState({ level })
+  }
+
+  storeFgColor = (event: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({ fgColor: event.target.value })
+  }
+
+  storeBgColor = (event: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({ bgColor: event.target.value })
   }
 
   toggleManual = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,7 +121,7 @@ export default class Home extends React.Component<object, State> {
 
   override render() {
     const {
-      text, level, autoSize, manualSize, useManualSize,
+      text, level, autoSize, manualSize, useManualSize, fgColor, bgColor,
     } = this.state
     const theText = text || ''
     const displaySize = useManualSize ? manualSize : autoSize
@@ -133,15 +146,14 @@ export default class Home extends React.Component<object, State> {
                   </Button>
                 </Grid>
               </Grid>
-              <Grid container spacing={1}>
-                <Grid item sm={6}>
-                  <br />
+              <Grid container spacing={1} className={styles.controls}>
+                <Grid item sm={6} className={styles.control}>
                   <FormLabel component="legend">QR Code Level</FormLabel>
                   <ButtonGroup variant="contained" color="primary" aria-label="contained primary button group">
                     {levels.map((l) => <Button onClick={this.storeLevel.bind(this, l)} key={`variant-${l}`} color={l === level ? 'secondary' : 'primary'}>{l}</Button>)}
                   </ButtonGroup>
                 </Grid>
-                <Grid item sm={6}>
+                <Grid item sm={6} className={styles.control}>
                   <FormLabel component="legend">Image Size</FormLabel>
                   <FormGroup row={true}>
                     <FormControlLabel
@@ -150,6 +162,14 @@ export default class Home extends React.Component<object, State> {
                     />
                     <TextField type="number" value={Math.round(displaySize)} onChange={this.storeManualSize} disabled={!useManualSize} />
                   </FormGroup>
+                </Grid>
+                <Grid item sm={6} className={styles.control}>
+                  <FormLabel component="legend" htmlFor="fg-color">Foreground Color</FormLabel>
+                  <input id="fg-color" className={styles.colorInput} type="color" value={fgColor} onChange={this.storeFgColor} />
+                </Grid>
+                <Grid item sm={6} className={styles.control}>
+                  <FormLabel component="legend" htmlFor="bg-color">Background Color</FormLabel>
+                  <input id="bg-color" className={styles.colorInput} type="color" value={bgColor} onChange={this.storeBgColor} />
                 </Grid>
               </Grid>
             </Grid>
@@ -160,7 +180,7 @@ export default class Home extends React.Component<object, State> {
 
         <br />
         <div className={styles.qr} ref={this.codeRef}>
-          {text !== '' && <QRRender text={text} level={level} size={displaySize} />}
+          {text !== '' && <QRRender text={text} level={level} size={displaySize} fgColor={fgColor} bgColor={bgColor} />}
         </div>
         <br />
       </Container>
@@ -172,6 +192,8 @@ interface QRProps {
   text: string
   level: QRCodeLevel
   size: number
+  fgColor: string
+  bgColor: string
 }
 
 class QRRender extends React.Component<QRProps, { key: string; data?: string }> {
@@ -183,8 +205,8 @@ class QRRender extends React.Component<QRProps, { key: string; data?: string }> 
     this.mounted = false
   }
 
-  static getKey({ level, text, size }: QRProps): string {
-    return `${level};${size.toString()};${text}`
+  static getKey({ level, text, size, fgColor, bgColor }: QRProps): string {
+    return `${level};${size.toString()};${fgColor};${bgColor};${text}`
   }
 
   static getDerivedStateFromProps(props: QRProps) {
@@ -192,9 +214,14 @@ class QRRender extends React.Component<QRProps, { key: string; data?: string }> 
   }
 
   private async updateCodeState() {
-    const { text, level, size } = this.props
+    const { text, level, size, fgColor, bgColor } = this.props
 
-    const data = await toDataURL(text, { errorCorrectionLevel: level, type: 'image/png', width: size } as QRCodeRenderersOptions)
+    const data = await toDataURL(text, {
+      errorCorrectionLevel: level,
+      type: 'image/png',
+      width: size,
+      color: { dark: fgColor, light: bgColor },
+    } as QRCodeRenderersOptions)
 
     if (!this.mounted) return
     this.setState({ data })
@@ -213,14 +240,14 @@ class QRRender extends React.Component<QRProps, { key: string; data?: string }> 
   }
 
   override render() {
-    const { text, level, size } = this.props
+    const { text, level, size, fgColor, bgColor } = this.props
     const { key } = this.state
     let { data } = this.state
     if (QRRender.getKey(this.props) !== key) {
       data = undefined
     }
 
-    const code = <QRCode value={text} level={level} size={size} />
+    const code = <QRCode value={text} level={level} size={size} fgColor={fgColor} bgColor={bgColor} />
     if (data !== undefined) {
       return <a href={data} target="_blank" rel="noreferrer">{code}</a>
     }
