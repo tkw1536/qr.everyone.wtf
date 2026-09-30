@@ -1,21 +1,23 @@
 import * as React from 'react'
 
+import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Switch from '@mui/material/Switch'
-import ButtonGroup from '@mui/material/ButtonGroup'
 import Container from '@mui/material/Container'
+import FormControl from '@mui/material/FormControl'
 import FormLabel from '@mui/material/FormLabel'
-import Grid from '@mui/material/Grid'
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
+import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
+import ToggleButton from '@mui/material/ToggleButton'
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 
 import { default as QRCode, type QRCodeProps } from 'react-qr-code'
 
 import { toDataURL } from 'qrcode'
 import type { QRCodeRenderersOptions } from 'qrcode'
-import { FormControlLabel, FormGroup } from '@mui/material'
 import styles from './index.module.css'
 
 type QRCodeLevel = QRCodeProps['level']
@@ -30,6 +32,28 @@ const levels = ['L', 'M', 'Q', 'H'] as const satisfies readonly QRCodeLevel[]
 
 const DEFAULT_FG_COLOR = '#000000'
 const DEFAULT_BG_COLOR = '#ffffff'
+const DEFAULT_LEVEL = levels[0]
+const DEFAULT_MANUAL_SIZE = 1000
+
+const fieldLabelSx = {
+  mb: 1,
+  color: 'text.secondary',
+  typography: 'body2',
+} as const
+
+const colorFieldInputProps = {
+  sx: {
+    height: 40,
+    px: 1,
+    py: 0.75,
+    '& input': {
+      cursor: 'pointer',
+      p: 0,
+      border: 0,
+      borderRadius: 1,
+    },
+  },
+} as const
 
 export default class Home extends React.Component<object, State> {
   static QR_MIN_HEIGHT = 128
@@ -40,13 +64,13 @@ export default class Home extends React.Component<object, State> {
 
   override state: State = {
     text: '',
-    level: levels[0],
+    level: DEFAULT_LEVEL,
     fgColor: DEFAULT_FG_COLOR,
     bgColor: DEFAULT_BG_COLOR,
 
     autoSize: 128,
     useManualSize: false,
-    manualSize: 1000,
+    manualSize: DEFAULT_MANUAL_SIZE,
   }
 
   storeText = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,8 +78,8 @@ export default class Home extends React.Component<object, State> {
     this.setState({ text })
   }
 
-  storeLevel = (level: QRCodeLevel, event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault()
+  storeLevel = (_event: React.MouseEvent<HTMLElement>, level: QRCodeLevel | null) => {
+    if (level === null) return
     this.setState({ level })
   }
 
@@ -75,6 +99,17 @@ export default class Home extends React.Component<object, State> {
     this.setState({ manualSize: parseInt(event.target.value, 10) })
   }
 
+  resetSettings = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    this.setState({
+      level: DEFAULT_LEVEL,
+      fgColor: DEFAULT_FG_COLOR,
+      bgColor: DEFAULT_BG_COLOR,
+      useManualSize: false,
+      manualSize: DEFAULT_MANUAL_SIZE,
+    })
+  }
+
   preventDefault = (event: React.FormEvent) => {
     event.preventDefault()
   }
@@ -86,6 +121,13 @@ export default class Home extends React.Component<object, State> {
 
   override componentWillUnmount = () => {
     window.removeEventListener('resize', this.updateSize)
+  }
+
+  override componentDidUpdate = (_prevProps: object, prevState: State) => {
+    // Recompute auto size when the form height changes (e.g. after layout shifts).
+    if (prevState.useManualSize !== this.state.useManualSize) {
+      this.updateSize()
+    }
   }
 
   updateSize = () => {
@@ -130,39 +172,92 @@ export default class Home extends React.Component<object, State> {
               Click on the generated image to open it in a new window.
             </>} />
             <CardContent>
+              <Stack spacing={2}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <TextField
+                    fullWidth
+                    type="text"
+                    label="Content"
+                    value={text}
+                    onChange={this.storeText}
+                  />
+                  <Button onClick={this.resetSettings} sx={{ flexShrink: 0 }}>
+                    Reset
+                  </Button>
+                </Stack>
 
-            <Grid container direction="row" spacing={1}>
-              <Grid item xs={12}>
-                <TextField fullWidth type="text" value={text} onChange={this.storeText} />
-              </Grid>
-              <Grid container spacing={1} className={styles.controls}>
-                <Grid item sm={6} className={styles.control}>
-                  <FormLabel component="legend">QR Code Level</FormLabel>
-                  <ButtonGroup variant="contained" color="primary" aria-label="contained primary button group">
-                    {levels.map((l) => <Button onClick={this.storeLevel.bind(this, l)} key={`variant-${l}`} color={l === level ? 'secondary' : 'primary'}>{l}</Button>)}
-                  </ButtonGroup>
-                </Grid>
-                <Grid item sm={6} className={styles.control}>
-                  <FormLabel component="legend">Image Size</FormLabel>
-                  <FormGroup row={true}>
-                    <FormControlLabel
-                      control={<Switch checked={useManualSize} onChange={this.toggleManual} />}
-                      label={'Manual'}
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gap: 2,
+                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                    minWidth: 0,
+                  }}
+                >
+                  <FormControl fullWidth sx={{ minWidth: 0 }}>
+                    <FormLabel sx={fieldLabelSx}>QR Code Level</FormLabel>
+                    <ToggleButtonGroup
+                      exclusive
+                      fullWidth
+                      size="small"
+                      color="primary"
+                      value={level}
+                      onChange={this.storeLevel}
+                      aria-label="QR code level"
+                    >
+                      {levels.map((l) => (
+                        <ToggleButton key={`variant-${l}`} value={l}>
+                          {l}
+                        </ToggleButton>
+                      ))}
+                    </ToggleButtonGroup>
+                  </FormControl>
+
+                  <FormControl fullWidth sx={{ minWidth: 0 }}>
+                    <FormLabel sx={fieldLabelSx}>Image Size</FormLabel>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+                      <Switch
+                        checked={useManualSize}
+                        onChange={this.toggleManual}
+                        inputProps={{ 'aria-label': 'Enable manual image size' }}
+                      />
+                      <TextField
+                        type="number"
+                        size="small"
+                        fullWidth
+                        value={Math.round(displaySize)}
+                        onChange={this.storeManualSize}
+                        disabled={!useManualSize}
+                        inputProps={{ min: 1, 'aria-label': 'Image size in pixels' }}
+                      />
+                    </Stack>
+                  </FormControl>
+
+                  <FormControl fullWidth sx={{ minWidth: 0 }}>
+                    <FormLabel htmlFor="fg-color" sx={fieldLabelSx}>Foreground Color</FormLabel>
+                    <TextField
+                      id="fg-color"
+                      type="color"
+                      size="small"
+                      value={fgColor}
+                      onChange={this.storeFgColor}
+                      InputProps={colorFieldInputProps}
                     />
-                    <TextField type="number" value={Math.round(displaySize)} onChange={this.storeManualSize} disabled={!useManualSize} />
-                  </FormGroup>
-                </Grid>
-                <Grid item sm={6} className={styles.control}>
-                  <FormLabel component="legend" htmlFor="fg-color">Foreground Color</FormLabel>
-                  <input id="fg-color" className={styles.colorInput} type="color" value={fgColor} onChange={this.storeFgColor} />
-                </Grid>
-                <Grid item sm={6} className={styles.control}>
-                  <FormLabel component="legend" htmlFor="bg-color">Background Color</FormLabel>
-                  <input id="bg-color" className={styles.colorInput} type="color" value={bgColor} onChange={this.storeBgColor} />
-                </Grid>
-              </Grid>
-            </Grid>
+                  </FormControl>
 
+                  <FormControl fullWidth sx={{ minWidth: 0 }}>
+                    <FormLabel htmlFor="bg-color" sx={fieldLabelSx}>Background Color</FormLabel>
+                    <TextField
+                      id="bg-color"
+                      type="color"
+                      size="small"
+                      value={bgColor}
+                      onChange={this.storeBgColor}
+                      InputProps={colorFieldInputProps}
+                    />
+                  </FormControl>
+                </Box>
+              </Stack>
             </CardContent>
           </Card>
         </form>
@@ -171,7 +266,6 @@ export default class Home extends React.Component<object, State> {
         <div className={styles.qr} ref={this.codeRef}>
           {text !== '' && <QRRender text={text} level={level} size={displaySize} fgColor={fgColor} bgColor={bgColor} />}
         </div>
-        <br />
       </Container>
     )
   }
