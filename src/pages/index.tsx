@@ -3,6 +3,7 @@ import * as React from 'react'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Switch from '@mui/material/Switch'
+import Collapse from '@mui/material/Collapse'
 import Container from '@mui/material/Container'
 import FormControl from '@mui/material/FormControl'
 import FormLabel from '@mui/material/FormLabel'
@@ -27,15 +28,16 @@ interface State extends Pick<QRProps, 'text' | 'level' | 'fgColor' | 'bgColor' |
   autoSize: number
   useManualSize: boolean
   manualSize: number
+  settingsOpen: boolean
 }
 
 const levels = ['L', 'M', 'Q', 'H'] as const satisfies readonly QRCodeLevel[]
-const formats = ['png', 'jpeg', 'webp', 'svg'] as const satisfies readonly DownloadFormat[]
+const formats = ['svg', 'png', 'jpeg', 'webp'] as const satisfies readonly DownloadFormat[]
 
 const DEFAULT_FG_COLOR = '#000000'
 const DEFAULT_BG_COLOR = '#ffffff'
 const DEFAULT_LEVEL = levels[0]
-const DEFAULT_FORMAT: DownloadFormat = 'png'
+const DEFAULT_FORMAT = formats[0]
 const DEFAULT_MANUAL_SIZE = 1000
 
 const fieldLabelSx = {
@@ -75,6 +77,7 @@ export default class Home extends React.Component<object, State> {
     autoSize: 128,
     useManualSize: false,
     manualSize: DEFAULT_MANUAL_SIZE,
+    settingsOpen: false,
   }
 
   storeText = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,6 +111,11 @@ export default class Home extends React.Component<object, State> {
     this.setState({ manualSize: parseInt(event.target.value, 10) })
   }
 
+  toggleSettings = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    this.setState((state) => ({ settingsOpen: !state.settingsOpen }))
+  }
+
   resetSettings = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
     this.setState({
@@ -131,6 +139,7 @@ export default class Home extends React.Component<object, State> {
 
   override componentWillUnmount = () => {
     window.removeEventListener('resize', this.updateSize)
+    this.stopSizeTracking()
   }
 
   override componentDidUpdate = (_prevProps: object, prevState: State) => {
@@ -138,6 +147,23 @@ export default class Home extends React.Component<object, State> {
     if (prevState.useManualSize !== this.state.useManualSize) {
       this.updateSize()
     }
+  }
+
+  private sizeFrame = 0
+
+  startSizeTracking = () => {
+    cancelAnimationFrame(this.sizeFrame)
+    const tick = () => {
+      this.updateSize()
+      this.sizeFrame = requestAnimationFrame(tick)
+    }
+    this.sizeFrame = requestAnimationFrame(tick)
+  }
+
+  stopSizeTracking = () => {
+    cancelAnimationFrame(this.sizeFrame)
+    this.sizeFrame = 0
+    this.updateSize()
   }
 
   updateSize = () => {
@@ -161,7 +187,9 @@ export default class Home extends React.Component<object, State> {
 
     // the size
     const size = Math.min(width, Math.max(height, Home.QR_MIN_HEIGHT))
-    this.setState({ autoSize: size })
+    if (size !== this.state.autoSize) {
+      this.setState({ autoSize: size })
+    }
   }
 
   private formRef = React.createRef<HTMLFormElement>()
@@ -170,7 +198,7 @@ export default class Home extends React.Component<object, State> {
 
   override render() {
     const {
-      text, level, format, autoSize, manualSize, useManualSize, fgColor, bgColor,
+      text, level, format, autoSize, manualSize, useManualSize, fgColor, bgColor, settingsOpen,
     } = this.state
     const displaySize = useManualSize ? manualSize : autoSize
     return (
@@ -178,115 +206,130 @@ export default class Home extends React.Component<object, State> {
         <form noValidate onSubmit={this.preventDefault} autoComplete="off" ref={this.formRef}>
           <Card>
             <CardHeader title="QR Code Generator" subheader={<>
-              Generate and display a QR Code.
+              Generate a QR Code.
               All data is generated locally and never leaves your device.
-              Click on the generated image to download it.
+              Click the code to download.
             </>} />
             <CardContent>
               <Stack spacing={2}>
+                <TextField
+                  fullWidth
+                  type="text"
+                  label="Content"
+                  value={text}
+                  onChange={this.storeText}
+                />
+
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <TextField
-                    fullWidth
-                    type="text"
-                    label="Content"
-                    value={text}
-                    onChange={this.storeText}
-                  />
-                  <Button onClick={this.resetSettings} sx={{ flexShrink: 0 }}>
-                    Reset
+                  <Button onClick={this.toggleSettings}>
+                    {settingsOpen ? 'Settings ▾' : 'Settings ▸'}
                   </Button>
+                  {settingsOpen && (
+                    <Button onClick={this.resetSettings}>
+                      Reset
+                    </Button>
+                  )}
                 </Stack>
 
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gap: 2,
-                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                    minWidth: 0,
-                  }}
+                <Collapse
+                  in={settingsOpen}
+                  onEnter={this.startSizeTracking}
+                  onEntered={this.stopSizeTracking}
+                  onExit={this.startSizeTracking}
+                  onExited={this.stopSizeTracking}
                 >
-                  <FormControl fullWidth sx={{ minWidth: 0, gridColumn: '1 / -1' }}>
-                    <FormLabel sx={fieldLabelSx}>QR Code Level</FormLabel>
-                    <ToggleButtonGroup
-                      exclusive
-                      fullWidth
-                      size="small"
-                      color="primary"
-                      value={level}
-                      onChange={this.storeLevel}
-                      aria-label="QR code level"
-                    >
-                      {levels.map((l) => (
-                        <ToggleButton key={`variant-${l}`} value={l}>
-                          {l}
-                        </ToggleButton>
-                      ))}
-                    </ToggleButtonGroup>
-                  </FormControl>
-
-                  <FormControl fullWidth sx={{ minWidth: 0 }}>
-                    <FormLabel htmlFor="fg-color" sx={fieldLabelSx}>Foreground Color</FormLabel>
-                    <TextField
-                      id="fg-color"
-                      type="color"
-                      size="small"
-                      value={fgColor}
-                      onChange={this.storeFgColor}
-                      InputProps={colorFieldInputProps}
-                    />
-                  </FormControl>
-
-                  <FormControl fullWidth sx={{ minWidth: 0 }}>
-                    <FormLabel htmlFor="bg-color" sx={fieldLabelSx}>Background Color</FormLabel>
-                    <TextField
-                      id="bg-color"
-                      type="color"
-                      size="small"
-                      value={bgColor}
-                      onChange={this.storeBgColor}
-                      InputProps={colorFieldInputProps}
-                    />
-                  </FormControl>
-
-                  <FormControl fullWidth sx={{ minWidth: 0 }}>
-                    <FormLabel sx={fieldLabelSx}>Image Size</FormLabel>
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
-                      <Switch
-                        checked={useManualSize}
-                        onChange={this.toggleManual}
-                        inputProps={{ 'aria-label': 'Enable manual image size' }}
-                      />
-                      <TextField
-                        type="number"
-                        size="small"
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gap: 2,
+                      gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                      minWidth: 0,
+                      pt: 1,
+                    }}
+                  >
+                    <FormControl fullWidth sx={{ minWidth: 0, gridColumn: '1 / -1' }}>
+                      <FormLabel sx={fieldLabelSx}>Error Correction Code Level</FormLabel>
+                      <ToggleButtonGroup
+                        exclusive
                         fullWidth
-                        value={Math.round(displaySize)}
-                        onChange={this.storeManualSize}
-                        disabled={!useManualSize}
-                        inputProps={{ min: 1, 'aria-label': 'Image size in pixels' }}
-                      />
-                    </Stack>
-                  </FormControl>
+                        size="small"
+                        color="primary"
+                        value={level}
+                        onChange={this.storeLevel}
+                        aria-label="Error Correction Code Level"
+                      >
+                        {levels.map((l) => (
+                          <ToggleButton key={`variant-${l}`} value={l}>
+                            {l}
+                          </ToggleButton>
+                        ))}
+                      </ToggleButtonGroup>
+                    </FormControl>
 
-                  <FormControl fullWidth sx={{ minWidth: 0 }}>
-                    <FormLabel sx={fieldLabelSx}>Download Format</FormLabel>
-                    <ToggleButtonGroup
-                      exclusive
-                      fullWidth
-                      size="small"
-                      color="primary"
-                      value={format}
-                      onChange={this.storeFormat}
-                      aria-label="Download format"
-                    >
-                      {formats.map((f) => (
-                        <ToggleButton key={`format-${f}`} value={f}>
-                          {f.toUpperCase()}
-                        </ToggleButton>
-                      ))}
-                    </ToggleButtonGroup>
-                  </FormControl>
-                </Box>
+                    <FormControl fullWidth sx={{ minWidth: 0 }}>
+                      <FormLabel htmlFor="fg-color" sx={fieldLabelSx}>Foreground Color</FormLabel>
+                      <TextField
+                        id="fg-color"
+                        type="color"
+                        size="small"
+                        value={fgColor}
+                        onChange={this.storeFgColor}
+                        InputProps={colorFieldInputProps}
+                      />
+                    </FormControl>
+
+                    <FormControl fullWidth sx={{ minWidth: 0 }}>
+                      <FormLabel htmlFor="bg-color" sx={fieldLabelSx}>Background Color</FormLabel>
+                      <TextField
+                        id="bg-color"
+                        type="color"
+                        size="small"
+                        value={bgColor}
+                        onChange={this.storeBgColor}
+                        InputProps={colorFieldInputProps}
+                      />
+                    </FormControl>
+
+                    <FormControl fullWidth sx={{ minWidth: 0 }}>
+                      <FormLabel sx={fieldLabelSx}>Image Size</FormLabel>
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+                        <Switch
+                          checked={useManualSize}
+                          onChange={this.toggleManual}
+                          inputProps={{ 'aria-label': 'Enable manual image size' }}
+                        />
+                        <TextField
+                          type="number"
+                          size="small"
+                          fullWidth
+                          value={Math.round(displaySize)}
+                          onChange={this.storeManualSize}
+                          disabled={!useManualSize}
+                          inputProps={{ min: 1, 'aria-label': 'Image size in pixels' }}
+                        />
+                      </Stack>
+                    </FormControl>
+
+                    <FormControl fullWidth sx={{ minWidth: 0 }}>
+                      <FormLabel sx={fieldLabelSx}>Download Format</FormLabel>
+                      <ToggleButtonGroup
+                        exclusive
+                        fullWidth
+                        size="small"
+                        color="primary"
+                        value={format}
+                        onChange={this.storeFormat}
+                        aria-label="Download format"
+                      >
+                        {formats.map((f) => (
+                          <ToggleButton key={`format-${f}`} value={f}>
+                            {f.toUpperCase()}
+                          </ToggleButton>
+                        ))}
+                      </ToggleButtonGroup>
+                    </FormControl>
+                  </Box>
+                </Collapse>
               </Stack>
             </CardContent>
           </Card>
